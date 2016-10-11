@@ -34,6 +34,9 @@ if __name__ == '__main__':
             'e.g., A batch size of 150 seems to work well when building the '
             'database from scratch.')
     aa('--simulate', nargs='+', default=None)
+    aa('--update-turnovers', action='store_true',
+       help='When set, ALL games will have away_turnovers and home_turnovers '
+        'updated with the correct values from NFL.com')
     args = parser.parse_args()
 
     nfldb.update.run(**vars(args))

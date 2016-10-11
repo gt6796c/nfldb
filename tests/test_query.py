@@ -18,6 +18,14 @@ def qgame(q):
     return q.game(gsis_id='2013090800')
 
 
+def test_num_turnovers(db):
+    import nfldb.update
+    with nfldb.Tx(db) as cursor:
+        g = nfldb.update.game_from_id(cursor, '2013090800')
+        assert g.home_turnovers == 2
+        assert g.away_turnovers == 3
+
+
 def test_num_games_in_season(q):
     assert len(q.as_games()) == (16 * 32) / 2
 

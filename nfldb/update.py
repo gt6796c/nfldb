@@ -293,6 +293,36 @@ def games_missing(cursor):
     return sorted(nada, key=int)
 
 
+def update_game_turnovers(db, since):
+    """
+    Updates the turnover data of every game in the database.
+    """
+    log('Updating all game turnovers... ', end='')
+
+    with nfldb.Tx(db) as cursor:
+        cursor.execute('SELECT MAX(season_year) as max, MIN(season_year) as min from game')
+        start_year = None
+        stop_year = None
+        for row in cursor.fetchall():
+            start_year = row['min']
+            stop_year = row['max']
+        if not start_year:
+            return
+
+        lock_tables(cursor)
+        cursor.execute("SET TIME ZONE 'UTC'")
+        for year in range(start_year, stop_year+1):
+            games = nflgame.games(year)
+            for game in games:
+                dbg = nfldb.Game.from_id(db,game.eid)
+                home = int(game.data['home']['stats']['team']['trnovr'])
+                away = int(game.data['away']['stats']['team']['trnovr'])
+                if home != db.home_turnovers or away != db.away_turnovers:
+                    dbg.home_turnovers = home
+                    dbg.away_turnovers = away
+                    dbg._save(cursor)
+
+
 def update_game_schedules(db):
     """
     Updates the schedule data of every game in the database.
@@ -442,10 +472,12 @@ def lock_tables(cursor):
 
 
 def run(player_interval=43200, interval=None, update_schedules=False,
-        batch_size=5, simulate=None):
+        batch_size=5, simulate=None, update_turnovers=2000):
     global _simulate
 
     if simulate is not None:
+        assert not update_turnovers, \
+            "update_turnovers is incompatible with simulate"
         assert not update_schedules, \
             "update_schedules is incompatible with simulate"
 
@@ -507,7 +539,9 @@ def run(player_interval=43200, interval=None, update_schedules=False,
         nfldb.set_timezone(db, 'UTC')
         log('done.')
 
-        if update_schedules:
+        if update_turnovers:
+            update_game_turnovers(db, update_turnovers)
+        elif update_schedules:
             update_game_schedules(db)
         elif simulate is not None:
             done = update_simulate(db)
