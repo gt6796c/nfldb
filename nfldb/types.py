@@ -51,7 +51,7 @@ def _nflgame_start_time(schedule):
     meridiem = schedule['meridiem'] if 'meridiem' in schedule and schedule['meridiem'] else 'PM'
 
     s = "{0}-{1}-{2} {3}:{4} {5}".format(year, month, day, hour, minute, meridiem)
-    d = datetime.datetime.strptime(s, '%Y-%m-%d %H:%M %p')
+    d = datetime.datetime.strptime(s, '%Y-%m-%d %I:%M %p')
 
     return pytz.timezone('US/Eastern').localize(d).astimezone(pytz.utc)
 
