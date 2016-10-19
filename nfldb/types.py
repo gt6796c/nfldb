@@ -35,35 +35,24 @@ def _stat_categories():
 
 
 def _nflgame_start_time(schedule):
-    """
-    Given an entry in `nflgame.schedule`, return the start time of the
-    game in UTC.
-    """
-    # Hack to get around ambiugous times for weird London games.
-    if schedule['eid'] == '2015100400':
-        d = datetime.datetime(2015, 10, 4, 9, 30)
-        return pytz.timezone('US/Eastern').localize(d).astimezone(pytz.utc)
-    elif schedule['eid'] == '2015102500':
-        d = datetime.datetime(2015, 10, 25, 9, 30)
-        return pytz.timezone('US/Eastern').localize(d).astimezone(pytz.utc)
-    elif schedule['eid'] == '2015110100':
-        d = datetime.datetime(2015, 11, 1, 9, 30)
-        return pytz.timezone('US/Eastern').localize(d).astimezone(pytz.utc)
-
     # Year is always the season, so we bump it if the month is Jan-March.
     year, month, day = schedule['year'], schedule['month'], schedule['day']
     if 1 <= schedule['month'] <= 3:
         year += 1
 
-    # BUG: Getting the hour here will be wrong if a game starts before Noon
-    # EST. Not sure what to do about it...
     hour, minute = schedule['time'].strip().split(':')
-    minute = int(minute)
-    if hour == '12':
-        hour = 12
-    else:
-        hour = (int(hour) + 12) % 24
-    d = datetime.datetime(year, month, day, hour, minute)
+
+    # Format year, month, day, hour, minute for use with strptime
+    year = str(year)
+    month = str(month).zfill(2)
+    day = str(day).zfill(2)
+    hour = hour.zfill(2)
+    minute = minute.zfill(2)
+    meridiem = schedule['meridiem'] if 'meridiem' in schedule and schedule['meridiem'] else 'PM'
+
+    s = "{0}-{1}-{2} {3}:{4} {5}".format(year, month, day, hour, minute, meridiem)
+    d = datetime.datetime.strptime(s, '%Y-%m-%d %H:%M %p')
+
     return pytz.timezone('US/Eastern').localize(d).astimezone(pytz.utc)
 
 
