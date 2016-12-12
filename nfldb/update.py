@@ -315,8 +315,14 @@ def update_game_turnovers(db, since):
             games = nflgame.games(year)
             for game in games:
                 dbg = nfldb.Game.from_id(db,game.eid)
-                home = int(game.data['home']['stats']['team']['trnovr'])
-                away = int(game.data['away']['stats']['team']['trnovr'])
+                try:
+                    home = int(game.data['home']['stats']['team']['trnovr'])
+                except KeyError:
+                    home = 0
+                try:
+                    away = int(game.data['away']['stats']['team']['trnovr'])
+                except KeyError:
+                    away = 0
                 if home != db.home_turnovers or away != db.away_turnovers:
                     dbg.home_turnovers = home
                     dbg.away_turnovers = away
@@ -472,7 +478,7 @@ def lock_tables(cursor):
 
 
 def run(player_interval=43200, interval=None, update_schedules=False,
-        batch_size=5, simulate=None, update_turnovers=2000):
+        batch_size=5, simulate=None, update_turnovers=None):
     global _simulate
 
     if simulate is not None:
